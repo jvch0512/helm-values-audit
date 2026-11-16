@@ -1,0 +1,21 @@
+image:
+  repository: postgres
+  tag: "16.4"
+
+auth:
+  existingSecret: pg-credentials
+  secretKeys:
+    adminPasswordKey: postgres-password
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+tls:
+  enabled: true
+  verify: true

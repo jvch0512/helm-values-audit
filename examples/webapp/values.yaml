@@ -1,0 +1,42 @@
+# Default values for webapp
+replicaCount: 2
+
+image:
+  repository: registry.example.com/webapp
+  tag: latest
+  pullPolicy: Always
+
+sidecar:
+  image: busybox
+
+database:
+  host: db.internal
+  user: app
+  password: admin
+  existingSecret: webapp-db
+  passwordKey: password
+
+api:
+  token: "ghp_exampleExampleExample1234567890"
+  tokenFile: /var/run/secrets/token
+  url: https://api.example.com
+  insecureSkipVerify: true
+
+smtp:
+  password: "{{ .Values.global.smtpPassword }}"
+
+podSecurityContext:
+  runAsNonRoot: false
+  runAsUser: 0
+
+securityContext:
+  privileged: true
+  allowPrivilegeEscalation: true
+  readOnlyRootFilesystem: false
+  capabilities:
+    add:
+      - NET_ADMIN
+      - CHOWN
+    drop: [ALL]
+
+hostNetwork: true

@@ -1,0 +1,27 @@
+3 files, 13 findings
+HIGH     HLM002 webapp/values.yaml:15
+         database.password has the weak default value "admin"
+HIGH     HLM001 webapp/values.yaml:20
+         api.token holds a hard-coded value
+HIGH     HLM003 webapp/values.yaml:33
+         securityContext.privileged is true
+HIGH     HLM003 webapp/values.yaml:34
+         securityContext.allowPrivilegeEscalation is true
+HIGH     HLM008 webapp/values.yaml:38
+         securityContext.capabilities.add[0] adds the NET_ADMIN capability
+HIGH     HLM003 webapp/values.yaml:42
+         hostNetwork is true
+MEDIUM   HLM007 webapp/values.yaml:23
+         api.insecureSkipVerify disables TLS verification
+MEDIUM   HLM004 webapp/values.yaml:29
+         podSecurityContext.runAsNonRoot is false
+MEDIUM   HLM004 webapp/values.yaml:30
+         podSecurityContext.runAsUser is 0 (root)
+LOW      HLM005 webapp/values.yaml:6
+         image.tag uses the latest tag
+LOW      HLM005 webapp/values.yaml:10
+         sidecar.image has no tag
+LOW      HLM006 webapp/values.yaml:35
+         securityContext.readOnlyRootFilesystem is false
+INFO     HLM000 empty.yaml
+         empty file, ignored

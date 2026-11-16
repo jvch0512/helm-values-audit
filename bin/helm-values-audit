@@ -1,0 +1,50 @@
+#!/usr/bin/env lua5.4
+local dir = arg[0]:match("^(.*)/bin/[^/]*$") or "."
+package.path = dir .. "/src/?.lua;" .. package.path
+local H = require("helm")
+
+local usage = "usage: helm-values-audit PATH [--tsv] [--fail-on medium|high|critical]\nExit: 0 ok, 1 findings at or above --fail-on, 2 bad input.\n"
+local path, tsv, fail_on
+local i = 1
+while i <= #arg do
+  local a = arg[i]
+  if a == "--tsv" then tsv = true
+  elseif a == "--fail-on" then
+    i = i + 1
+    local v = arg[i]
+    if v ~= "medium" and v ~= "high" and v ~= "critical" then io.stderr:write(usage); os.exit(2) end
+    fail_on = v
+  elseif a:sub(1, 1) == "-" and #a > 1 then io.stderr:write(usage); os.exit(2)
+  elseif path then io.stderr:write(usage); os.exit(2)
+  else path = a end
+  i = i + 1
+end
+if not path then io.stderr:write(usage); os.exit(2) end
+local fh = io.open(path, "rb")
+if not fh and not H.is_dir(path) then
+  io.stderr:write("error: no such file or directory: " .. path .. "\n")
+  os.exit(2)
+end
+if fh then fh:close() end
+local p = path
+if #p > 1 then p = p:gsub("/+$", "") end
+if p == "" then p = "/" end
+local findings, n = H.audit_path(p)
+local out = {}
+local head = n .. " files, " .. #findings .. " findings"
+out[#out + 1] = (tsv and "# " or "") .. head
+for _, f in ipairs(findings) do
+  if tsv then
+    out[#out + 1] = table.concat({ f.sev, f.rule, f.where, f.msg }, "\t")
+  else
+    out[#out + 1] = string.format("%-8s %s %s", f.sev:upper(), f.rule, f.where)
+    out[#out + 1] = "         " .. f.msg
+  end
+end
+io.write(table.concat(out, "\n"), "\n")
+if fail_on then
+  for _, f in ipairs(findings) do
+    if H.rank(f.sev) <= H.rank(fail_on) then os.exit(1) end
+  end
+end
+os.exit(0)
