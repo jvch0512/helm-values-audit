@@ -2,6 +2,8 @@
 
 helm-values-audit reads Helm `values.yaml` files (and any other YAML) with a small built-in YAML reader and reports risky defaults: hard-coded secrets and tokens, weak default passwords, `privileged: true`, host namespaces, privilege escalation, containers that run as root, dangerous Linux capabilities, `latest` or missing image tags, writable root filesystems and disabled TLS verification. Findings carry the file, line and key path.
 
+![Terminal demo of helm-values-audit on its sample data](docs/demo.svg)
+
 **Live demo:** https://jvch0512.github.io/helm-values-audit/ (Synthetic data.)
 
 Lua 5.4, standard library only. The demo page is rendered from the tool's `--tsv` output by `scripts/site.py` (Python 3, only needed to regenerate the page).
@@ -48,3 +50,17 @@ make test    # A Lua test script: the YAML reader, every rule on good and bad va
 ```
 
 MIT.
+
+## Code scanning (SARIF)
+
+`scripts/tsv2sarif.py` converts the `--tsv` output into SARIF 2.1.0, so findings show up in GitHub code scanning:
+
+```sh
+bin/helm-values-audit examples --tsv | python3 scripts/tsv2sarif.py --tool helm-values-audit --prefix examples > results.sarif
+```
+
+Upload `results.sarif` with `github/codeql-action/upload-sarif`. Severities map to SARIF levels (critical and high to error, medium to warning, low and info to note) and to a `security-severity` score.
+
+## Validated on real data
+
+This tool was run on public corpora and the false positives it produced were fixed. Corpus, counts and bugs found are in [docs/validation.md](docs/validation.md).

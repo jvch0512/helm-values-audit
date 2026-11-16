@@ -23,5 +23,5 @@ LOW      HLM005 webapp/values.yaml:10
          sidecar.image has no tag
 LOW      HLM006 webapp/values.yaml:35
          securityContext.readOnlyRootFilesystem is false
-INFO     HLM000 empty.yaml
+INFO     HLM000 empty-values.yaml
          empty file, ignored

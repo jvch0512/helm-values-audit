@@ -223,8 +223,9 @@ end
 
 ------------------------------------------------------------------ rules
 local SECRET_WORDS = { "password", "passwd", "secret", "token", "apikey", "api_key", "privatekey", "private_key", "accesskey", "access_key", "secretkey", "secret_key", "credential" }
-local SKIP_WORDS = { "existing", "name", "ref", "enabled", "path", "file", "mount", "annotation", "length", "kind", "key", "keys", "policy", "type", "label", "namespace", "secretkeyref", "from", "env" }
+local SKIP_WORDS = { "existing", "name", "ref", "enabled", "path", "file", "mount", "annotation", "length", "kind", "key", "keys", "policy", "type", "label", "namespace", "secretkeyref", "from", "env", "selector", "field", "persist", "id-" }
 local WEAK = { admin = true, password = true, changeme = true, ["change-me"] = true, ["change_me"] = true, ["123456"] = true, ["12345678"] = true, root = true, secret = true, test = true, default = true, letmein = true, qwerty = true, ["1234"] = true, ["12345"] = true, guest = true, pass = true, ["admin123"] = true, ["password1"] = true, ["p@ssw0rd"] = true }
+local NON_SECRET_VALUES = { ["true"] = true, ["false"] = true, yes = true, no = true, null = true, none = true, read = true, write = true }
 local BAD_CAPS = { SYS_ADMIN = true, NET_ADMIN = true, SYS_PTRACE = true, SYS_MODULE = true, ALL = true }
 
 local function has_any(s, words)
@@ -310,7 +311,7 @@ function M.audit(text, file)
             local prob = image_problem(v.v)
             if prob then add("low", "HLM005", it.line, p, prob) end
           end
-          if secret_key(k) and v.v ~= "" and not v.v:find("{{", 1, true) and not v.v:match("^%$[%({]") then
+          if secret_key(k) and v.v ~= "" and not NON_SECRET_VALUES[v.v:lower()] and not v.v:find("{{", 1, true) and not v.v:match("^%$[%({]") then
             if WEAK[v.v:lower()] and has_any(kl, { "password", "passwd" }) then
               add("high", "HLM002", it.line, p, "has the weak default value " .. string.format("%q", v.v))
             else
@@ -361,6 +362,15 @@ end
 
 function M.is_dir(path) return is_dir(path) end
 
+-- When walking a directory only values files are audited: Helm templates are Go templates, not YAML,
+-- and workflows or unit tests in a chart repository are not chart values.
+function M.is_values_file(rel)
+  local r = "/" .. rel:lower()
+  if r:find("/templates/", 1, true) or r:find("/%.github/") or r:find("/unittests/", 1, true) or r:find("/ci/", 1, true) then return false end
+  local name = r:match("([^/]+)$") or ""
+  return name:match("values[^/]*%.ya?ml$") ~= nil
+end
+
 function M.list_files(dir)
   local p = io.popen("find " .. shq(dir) .. " -type f \\( -name '*.yaml' -o -name '*.yml' \\) -not -path '*/.git/*' 2>/dev/null")
   if not p then return {} end
@@ -368,7 +378,7 @@ function M.list_files(dir)
   local base = dir:gsub("/+$", "")
   for l in p:lines() do
     local rel = l:sub(1, #base + 1) == base .. "/" and l:sub(#base + 2) or l
-    res[#res + 1] = { rel = rel, full = l }
+    if M.is_values_file(rel) then res[#res + 1] = { rel = rel, full = l } end
   end
   p:close()
   table.sort(res, function(a, b) return a.rel < b.rel end)

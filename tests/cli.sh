@@ -21,8 +21,8 @@ exp "two paths" 2 examples examples
 "$BIN" examples | head -1 | grep -q '^3 files, 13 findings$' && ok "human header" || bad "human header"
 printf 'privileged: true\n' > "$T/values.yaml"
 "$BIN" "$T/values.yaml" --tsv | grep -q $'\tHLM003\tvalues.yaml:1\t' && ok "single file label" || bad "single file label"
-mkdir -p "$T/it's a dir"; printf 'privileged: true\n' > "$T/it's a dir/v.yml"
-"$BIN" "$T/it's a dir" --tsv | grep -q $'\tHLM003\tv.yml:1\t' && ok "quote in directory name" || bad "quote in directory name"
+mkdir -p "$T/it's a dir"; printf 'privileged: true\n' > "$T/it's a dir/values.yml"
+"$BIN" "$T/it's a dir" --tsv | grep -q $'\tHLM003\tvalues.yml:1\t' && ok "quote in directory name" || bad "quote in directory name"
 head -c 2000 /dev/urandom > "$T/bin.yaml"
 "$BIN" "$T/bin.yaml" >/dev/null 2>&1; [ $? -le 1 ] && ok "binary input survives" || bad "binary input"
 exit $fail
